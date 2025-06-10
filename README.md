@@ -1,7 +1,6 @@
 # آموزش سینک آی‌پی لیمیت (پنل 3x-ui)
 
-[![Views](https://hits.seeyoufarm.com/api/count/incr/badge.svg?url=https%3A%2F%2Fgithub.com%2FTaraRostami%2Fip-limit-sync&count_bg=%23007ec6&title_bg=%23555555&icon=&icon_color=%23E7E7E7&title=Total+View&edge_flat=false)](#)
-[![3x-ui](https://img.shields.io/badge/Panel-3x--ui-%23008771)](https://github.com/MHSanaei/3x-ui)
+[![3x-ui](https://img.shields.io/badge/Panel-3x--ui-%23008771?style=for-the-badge&longCache=true)](https://github.com/MHSanaei/3x-ui)
 
 > **Disclaimer:** This project is only for personal learning and communication, please do not use it for illegal purposes, please do not use it in a production environment
 
