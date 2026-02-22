@@ -12,9 +12,56 @@
 ## ویدیو آموزش کامل
 [![](https://img.youtube.com/vi/SiS9C-L170E/0.jpg)](https://youtu.be/SiS9C-L170E)
 
-**گام یک:**
 
-ابتدا باید در سرور ایران و خارج rsyslog را نصب کنید
+**گام یک (انتقال آی‌پی واقعی کابران - نصب و راه‌اندازی Nginx در سرور ایران):**
+
+برای اینکه آی‌پی واقعی کاربران به سرور خارج برسد و توسط سیستم لیمیت شناسایی شود، باید با استفاده از هدر `X-Forwarded-For` یا `X-Real-IP` آی‌پی واقعی کاربران را به پنل 3x-ui ارسال کنید. در این مثال از نرم افزار Nginx برای این منظور استفاده خواهیم کرد که یک Reverse Proxy می‌باشد _(شما میتوانید از نرم افزار های Reverse Proxy دیگر هم استفاده کنید)_. برای نصب Nginx این دستورات را در سرور **ایران** وارد کنید:
+
+```shell
+# آپدیت مخازن و نصب Nginx
+apt update && apt install nginx -y
+
+# فعال‌سازی و استارت سرویس Nginx
+systemctl enable nginx
+systemctl start nginx
+```
+سپس فایل کانفیگ را در مسیر `/etc/nginx/conf.d/proxy.conf` ایجاد کنید:
+
+```bash
+nano /etc/nginx/conf.d/proxy.conf
+```
+محتوای زیر را در آن قرار دهید (پورت 4040 ورودی تانل شما در سرور ایران است و پورت 80 مختص به کانفیگ کاربران است که از طریق آن به سرور متصل می‌شوند):
+
+
+```bash
+server {
+    listen 80;
+    server_name _;
+
+    location / {
+        proxy_pass http://127.0.0.1:4040;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    }
+}
+```
+
+فایل پیش‌فرض را پاک و Nginx را ریستارت کنید:
+
+```shell
+rm /etc/nginx/sites-enabled/default
+rm /etc/nginx/conf.d/default.conf
+systemctl restart nginx
+```
+
+
+**گام دو:**
+
+ابتدا باید در سرور ایران و خارج rsyslog را نصب کنید:
 ```shell
 apt install rsyslog -y
 ```
@@ -31,14 +78,14 @@ apt install python3-systemd -y
 systemctl restart fail2ban.service
 ```
 
-**گام دو (کانفیگ سرور ایران):**
+**گام سه (کانفیگ سرور ایران):**
 
-در سرور ایران یک فایل به نام 3xipl.conf در مسیر `/etc/rsyslog.d/` ایجاد و آنرا ویرایش کنید
+در سرور ایران یک فایل به نام 3xipl.conf در مسیر `/etc/rsyslog.d/` ایجاد و آنرا ویرایش کنید:
 ```shell
 nano /etc/rsyslog.d/3xipl.conf
 ```
 
-کانفیگ زیر را در فایل جایگذاری کنید و فایل را ذخیره کنید
+کانفیگ زیر را در فایل جایگذاری کنید و فایل را ذخیره کنید:
 ```shell
 module(load="imtcp")
 input(type="imtcp" port="10514" address="127.0.0.1")
@@ -46,12 +93,12 @@ input(type="imtcp" port="10514" address="127.0.0.1")
 template(name="tp01" type="string" string="%msg:2:$%\n")
 
 if $syslogtag == '3xipl' then {
-    action(type="omfile" Template="tp01" File="/var/log/3xipl.log")
+    action(type="omfile" Template="tp01" File="/var/log/x-ui/3xipl.log")
     & stop
 }
 ```
 
-کانفیگ json زیر را در تنظیمات xray بخش Advanced در قسمت routing قرار دهید
+کانفیگ json زیر را در تنظیمات xray بخش Advanced در قسمت routing قرار دهید:
 
 ![](./media/02-xray-configs.png)
 <div align="left">
@@ -81,18 +128,18 @@ if $syslogtag == '3xipl' then {
 
 در این مرحله سرور ایران شما به درستی کانفیگ شده و آماده است تا لاگ های مربوط به آی‌پی لیمیت را از سرور خارج دریافت کند و به فایل لاگ مربوطه (در سرور ایران) انتقال دهد تا سینک آی‌پی لیمیت به درستی انجام شود.
 
-**گام سه (کانفیگ سرور خارج):**
+**گام چهار (کانفیگ سرور خارج):**
 
-در سرور خارج یک فایل به نام 3xipl.conf در مسیر `/etc/rsyslog.d/` ایجاد کنید و آنرا ویرایش کنید
+در سرور خارج یک فایل به نام 3xipl.conf در مسیر `/etc/rsyslog.d/` ایجاد کنید و آنرا ویرایش کنید:
 ```shell
 nano /etc/rsyslog.d/3xipl.conf
 ```
-کانفیگ زیر را در فایل کپی کنید و فایل را ذخیره کنید
+کانفیگ زیر را در فایل کپی کنید و فایل را ذخیره کنید:
 ```shell
 module(load="imfile" Mode="inotify")
 
 input(type="imfile"
-      File="/var/log/3xipl.log"
+      File="/var/log/x-ui/3xipl.log"
       Tag="3xipl"
       Severity="info"
       Facility="local7"
@@ -114,11 +161,11 @@ if $syslogtag == '3xipl' then {
 }
 ```
 
-یک اینباند dokodemo-door با پورت 10514 ایجاد کنید و آنرا مشابه تصویر زیر تنظیم کنید
+یک اینباند dokodemo-door با پورت 10514 ایجاد کنید و آنرا مشابه تصویر زیر تنظیم کنید:
 
 ![](./media/01-dokodemo-door.png)
 
-کانفیگ json زیر را در تنظیمات xray بخش Advanced در قسمت routing قرار دهید
+کانفیگ json زیر را در تنظیمات xray بخش Advanced در قسمت routing قرار دهید:
 
 ![](./media/03-xray-configs.png)
 <div align="left">
@@ -146,7 +193,7 @@ if $syslogtag == '3xipl' then {
 
 میتوانید با بررسی فایل زیر در هر دو سرور از سینک و انتقال صحیح لاگ اطمینان حاصل کنید.
 
-`nano /var/log/3xipl.log`
+`nano /var/log/x-ui/3xipl.log`
 
 > [!NOTE]
 > همچنین بعد از انجام مراحل بالا باید time zone هر دو سرور را مشابه هم تنظیم کنید تا به لحاظ زمانی هم با یکدیگر سینک باشند، از طریق دستور زیر میتوانید time zone را روی UTC تنظیم کنید:
