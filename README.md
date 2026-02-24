@@ -17,22 +17,23 @@
 
 برای اینکه آی‌پی واقعی کاربران به سرور خارج برسد و توسط سیستم لیمیت شناسایی شود، باید با استفاده از هدر `X-Forwarded-For` یا `X-Real-IP` آی‌پی واقعی کاربران را به پنل 3x-ui ارسال کنید. در این مثال از نرم افزار Nginx برای این منظور استفاده خواهیم کرد که یک Reverse Proxy می‌باشد _(شما میتوانید از نرم افزار های Reverse Proxy دیگر هم استفاده کنید)_. برای نصب Nginx این دستورات را در سرور **ایران** وارد کنید:
 
+آپدیت مخازن و نصب Nginx:
 ```shell
-# آپدیت مخازن و نصب Nginx
 apt update && apt install nginx -y
+```
 
-# فعال‌سازی و استارت سرویس Nginx
+فعال‌سازی و استارت سرویس Nginx:
+```shell
 systemctl enable nginx
 systemctl start nginx
 ```
-سپس فایل کانفیگ را در مسیر `/etc/nginx/conf.d/proxy.conf` ایجاد کنید:
 
+سپس فایل کانفیگ را در مسیر `/etc/nginx/conf.d/proxy.conf` ایجاد کنید:
 ```bash
 nano /etc/nginx/conf.d/proxy.conf
 ```
+
 محتوای زیر را در آن قرار دهید (پورت 4040 ورودی تانل شما در سرور ایران است و پورت 80 مختص به کانفیگ کاربران است که از طریق آن به سرور متصل می‌شوند):
-
-
 ```bash
 server {
     listen 80;
@@ -51,7 +52,6 @@ server {
 ```
 
 فایل پیش‌فرض را پاک و Nginx را ریستارت کنید:
-
 ```shell
 rm /etc/nginx/sites-enabled/default
 rm /etc/nginx/conf.d/default.conf
@@ -65,6 +65,7 @@ systemctl restart nginx
 ```shell
 apt install rsyslog -y
 ```
+
 سپس از منوی `x-ui` گزینه‌ی `IP Limit Management` را انتخاب کنید و آی‌پی لیمیت را در هر دو سرور نصب کنید،
 با دستور زیر می‌توانید اطمینان حاصل کنید که سرویس `fail2ban` بدون مشکل نصب و اجرا شده است:
 ```shell
@@ -80,7 +81,7 @@ systemctl restart fail2ban.service
 
 **گام سه (کانفیگ سرور ایران):**
 
-در سرور ایران یک فایل به نام 3xipl.conf در مسیر `/etc/rsyslog.d/` ایجاد و آنرا ویرایش کنید:
+در سرور ایران یک فایل به نام `3xipl.conf` در مسیر `/etc/rsyslog.d/` ایجاد و آنرا ویرایش کنید:
 ```shell
 nano /etc/rsyslog.d/3xipl.conf
 ```
@@ -98,7 +99,7 @@ if $syslogtag == '3xipl' then {
 }
 ```
 
-کانفیگ json زیر را در تنظیمات xray بخش Advanced در قسمت routing قرار دهید:
+کانفیگ json زیر را در تنظیمات xray بخش Advanced در قسمت `routing` قرار دهید:
 
 ![](./media/02-xray-configs.png)
 <div align="left">
@@ -130,10 +131,11 @@ if $syslogtag == '3xipl' then {
 
 **گام چهار (کانفیگ سرور خارج):**
 
-در سرور خارج یک فایل به نام 3xipl.conf در مسیر `/etc/rsyslog.d/` ایجاد کنید و آنرا ویرایش کنید:
+در سرور خارج یک فایل به نام `3xipl.conf` در مسیر `/etc/rsyslog.d/` ایجاد کنید و آنرا ویرایش کنید:
 ```shell
 nano /etc/rsyslog.d/3xipl.conf
 ```
+
 کانفیگ زیر را در فایل کپی کنید و فایل را ذخیره کنید:
 ```shell
 module(load="imfile" Mode="inotify")
@@ -161,11 +163,11 @@ if $syslogtag == '3xipl' then {
 }
 ```
 
-یک اینباند dokodemo-door با پورت 10514 ایجاد کنید و آنرا مشابه تصویر زیر تنظیم کنید:
+یک اینباند `dokodemo-door` با پورت `10514` ایجاد کنید و آنرا مشابه تصویر زیر تنظیم کنید:
 
 ![](./media/01-dokodemo-door.png)
 
-کانفیگ json زیر را در تنظیمات xray بخش Advanced در قسمت routing قرار دهید:
+کانفیگ json زیر را در تنظیمات xray بخش Advanced در قسمت `routing` قرار دهید:
 
 ![](./media/03-xray-configs.png)
 <div align="left">
